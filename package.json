@@ -7,7 +7,7 @@
     "test": "hardhat test",
     "compile": "hardhat compile",
     "coverage": "hardhat coverage",
-    "deploy": "hardhat deploy --tags Sale --write true",
+    "deploy": "hardhat deploy --tags AtomicBeerite true",
     "testnet:deploy": "hardhat deploy --tags AtomicBeer --network testnet",
     "mainnet:deploy": "hardhat deploy --tags StakingRewardsFactory --network mainnet",
     "t:verify": "hardhat --network testnet etherscan-verify --sleep",
@@ -32,12 +32,12 @@
     "ethers": "5.4.6",
     "hardhat": "^2.6.4",
     "hardhat-contract-sizer": "^2.10.0",
-    "hardhat-deploy": "0.8.6",
     "hardhat-gas-reporter": "^1.0.7",
     "prettier": "2.2.1",
     "prettier-plugin-solidity": "1.0.0-beta.8",
     "solidity-coverage": "^0.7.17",
-    "web3": "^1.6.1"
+    "web3": "^1.6.1",
+    "hardhat-deploy": "0.8.6"
   },
   "dependencies": {
     "@chainlink/contracts": "^0.3.1",

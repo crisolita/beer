@@ -7,7 +7,6 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "contracts/interfaces/IUniswapV2Factory.sol";
 import "contracts/interfaces/IUniswapV2Router02.sol";
 import "contracts/BABYTOKENDividendTracker.sol";
-import "contracts/interfaces/IPinkAntiBot.sol";
 import "@openzeppelin/contracts/proxy/Clones.sol";
 import "contracts/BaseToken.sol";
 
@@ -35,8 +34,6 @@ contract AtomicBeer is ERC20, Ownable, BaseToken {
 	// transfer *to* these addresses
 	// could be subject to a maximum transfer amount
 	mapping(address => bool) public automatedMarketMakerPairs;
-	IPinkAntiBot public pinkAntiBot;
-	bool public enableAntiBot;
 	event UpdateDividendTracker(
 		address indexed newAddress,
 		address indexed oldAddress
@@ -76,76 +73,68 @@ contract AtomicBeer is ERC20, Ownable, BaseToken {
 		string memory name_,
 		string memory symbol_,
 		uint256 totalSupply_,
-		address[5] memory addrs,
-		// reward, router, marketing
-		// wallet, dividendTracker, anti bot
+		address[4] memory addrs,
+		// reward, router, marketing wallet, dividendTracker
 		uint256[3] memory feeSettings, // rewards, liquidity,
 		// marketing
 		uint256 minimumTokenBalanceForDividends_,
 		address serviceFeeReceiver_,
 		uint256 serviceFee_
 	) payable ERC20(name_, symbol_) {
-		rewardToken = addrs[0];
-		_marketingWalletAddress = addrs[2];
-		require(
-			msg.sender != _marketingWalletAddress,
-			"Owner and marketing wallet cannot be the same"
-		);
-		pinkAntiBot = IPinkAntiBot(addrs[4]);
-		pinkAntiBot.setTokenOwner(owner());
-		enableAntiBot = true;
-		tokenRewardsFee = feeSettings[0];
-		liquidityFee = feeSettings[1];
-		marketingFee = feeSettings[2];
-		totalFees = tokenRewardsFee.add(liquidityFee).add(marketingFee);
-		require(totalFees <= 25, "Total fee is over 25%");
-		swapTokensAtAmount = totalSupply_.mul(2).div(10**6); //0.002%
-		// use by default 300,000 gas to process auto-claimingdividends
-		gasForProcessing = 300000;
-		dividendTracker = BABYTOKENDividendTracker(
-			payable(Clones.clone(addrs[3]))
-		);
-		dividendTracker.initialize(
-			rewardToken,
-			minimumTokenBalanceForDividends_
-		);
-		IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(addrs[1]);
-		// Create a uniswap pair for this new token
-		address _uniswapV2Pair =
-			IUniswapV2Factory(_uniswapV2Router.factory()).createPair(
-				address(this),
-				_uniswapV2Router.WETH()
-			);
-		uniswapV2Router = _uniswapV2Router;
-		uniswapV2Pair = _uniswapV2Pair;
-		_setAutomatedMarketMakerPair(_uniswapV2Pair, true);
-		// exclude from receiving dividends
-		dividendTracker.excludeFromDividends(address(dividendTracker));
-		dividendTracker.excludeFromDividends(address(this));
-		dividendTracker.excludeFromDividends(owner());
-		dividendTracker.excludeFromDividends(address(0xdead));
-		dividendTracker.excludeFromDividends(address(_uniswapV2Router));
-		// exclude from paying fees or having max transaction amount
-		excludeFromFees(owner(), true);
-		excludeFromFees(_marketingWalletAddress, true);
-		excludeFromFees(address(this), true);
-		/*
-_mint is an internal function in ERC20.sol that is
-only called here,
-and CANNOT be called ever again
-*/
-		_mint(owner(), totalSupply_);
-		emit TokenCreated(
-			owner(),
-			address(this),
-			TokenType.antiBotBaby,
-			VERSION
-		);
-		payable(serviceFeeReceiver_).transfer(serviceFee_);
-	}
-
-	function setEnableAntiBot(bool _enable) external onlyOwner {
-		enableAntiBot = _enable;
+		// rewardToken = addrs[0];
+		// _marketingWalletAddress = addrs[2];
+		// require(
+		// 	msg.sender != _marketingWalletAddress,
+		// 	"Owner and marketing wallet cannot be the same"
+		// );
+		// tokenRewardsFee = feeSettings[0];
+		// liquidityFee = feeSettings[1];
+		// marketingFee = feeSettings[2];
+		// totalFees = tokenRewardsFee.add(liquidityFee).add(marketingFee);
+		// require(totalFees <= 25, "Total fee is over 25%");
+		// swapTokensAtAmount = totalSupply_.mul(2).div(10**6); //0.002%
+		// // use by default 300,000 gas to process auto-claimingdividends
+		// gasForProcessing = 300000;
+		// 		dividendTracker = BABYTOKENDividendTracker(
+		// 			payable(Clones.clone(addrs[3]))
+		// 		);
+		// 		dividendTracker.initialize(
+		// 			rewardToken,
+		// 			minimumTokenBalanceForDividends_
+		// 		);
+		// 		IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(addrs[1]);
+		// 		// Create a uniswap pair for this new token
+		// 		address _uniswapV2Pair =
+		// 			IUniswapV2Factory(_uniswapV2Router.factory()).createPair(
+		// 				address(this),
+		// 				_uniswapV2Router.WETH()
+		// 			);
+		// 		uniswapV2Router = _uniswapV2Router;
+		// 		uniswapV2Pair = _uniswapV2Pair;
+		// 		_setAutomatedMarketMakerPair(_uniswapV2Pair, true);
+		// 		// exclude from receiving dividends
+		// 		dividendTracker.excludeFromDividends(address(dividendTracker));
+		// 		dividendTracker.excludeFromDividends(address(this));
+		// 		dividendTracker.excludeFromDividends(owner());
+		// 		dividendTracker.excludeFromDividends(address(0xdead));
+		// 		dividendTracker.excludeFromDividends(address(_uniswapV2Router));
+		// 		// exclude from paying fees or having max transaction amount
+		// 		excludeFromFees(owner(), true);
+		// 		excludeFromFees(_marketingWalletAddress, true);
+		// 		excludeFromFees(address(this), true);
+		// 		/*
+		// _mint is an internal function in ERC20.sol that is
+		// only called here,
+		// and CANNOT be called ever again
+		// */
+		// 		_mint(owner(), totalSupply_);
+		// 		emit TokenCreated(
+		// 			owner(),
+		// 			address(this),
+		// 			TokenType.antiBotBaby,
+		// 			VERSION
+		// 		);
+		// 		payable(serviceFeeReceiver_).transfer(serviceFee_);
 	}
 
 	receive() external payable {}
@@ -390,9 +379,7 @@ and CANNOT be called ever again
 	) internal override {
 		require(from != address(0), "ERC20: transfer from the zero address");
 		require(to != address(0), "ERC20: transfer to the zero saddress");
-		if (enableAntiBot) {
-			pinkAntiBot.onPreTransferCheck(from, to, amount);
-		}
+
 		if (amount == 0) {
 			super._transfer(from, to, 0);
 			return;
